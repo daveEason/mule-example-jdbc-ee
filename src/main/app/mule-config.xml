@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xmlns:spring="http://www.springframework.org/schema/beans"
+      xmlns:jdbc="http://www.mulesoft.org/schema/mule/ee/jdbc"
+      xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+    xsi:schemaLocation="
+        http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/3.2/mule.xsd
+        http://www.mulesoft.org/schema/mule/ee/jdbc http://www.mulesoft.org/schema/mule/ee/jdbc/3.2/mule-jdbc-ee.xsd
+        http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/3.2/mule-vm.xsd
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <description>
+    Example project illustrate use of Mule JDBC EE connector
+    </description>
+
+    <spring:beans>
+
+        <spring:bean id="SetupDatabaseNotificationListener"
+                     class="com.mulesoft.muleexamplejdbcee.SetupDatabaseNotificationListener"/>
+
+        <spring:bean id="jdbcFlightsDataSource" class="org.enhydra.jdbc.standard.StandardDataSource" destroy-method="shutdown">
+            <spring:property name="driverName"
+                             value="org.apache.derby.jdbc.EmbeddedDriver"/>
+            <spring:property name="url"
+                             value="jdbc:derby:memory:muleEmbeddedDB;create=true"/>
+        </spring:bean>
+
+    </spring:beans>
+
+    <jdbc:connector name="jdbcFlightsConnector" dataSource-ref="jdbcFlightsDataSource">
+        <jdbc:query key="SearchFlights" value="SELECT * FROM Flights"/>
+        <!--<jdbc:query key="UpdateFlightDestination" value="UPDATE Flights SET DESTINATION=#[map-payload:Destination] WHERE FLIGHT_ID = #[map-payload:FlightId]"/>-->
+        <!--<jdbc:query key="InsertFlight" value="INSERT INTO Flights (ORIGIN,DESTINATION) VALUES (#[map-payload:Origin],#[map-payload:Destination])"/>-->
+    </jdbc:connector>
+
+    <flow name="main">
+        <vm:inbound-endpoint path="in" exchange-pattern="request-response"/>
+
+        <!-- Note: request-response for synchronous invocation of database -->
+        <jdbc:outbound-endpoint queryKey="SearchFlights" exchange-pattern="request-response"/>
+
+    </flow>
+</mule>
